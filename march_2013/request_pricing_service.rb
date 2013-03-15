@@ -19,11 +19,11 @@ class Illinois < Pricer
       when number_of_pages < 1
         HANDLING_CHARGE
       when number_of_pages > 50
-        (FIRST_50 + (number_of_pages - 50) * 0.32)
+        FIRST_50 + (number_of_pages - 50) * 0.32
       when number_of_pages > 25
-        (FIRST_25 + (number_of_pages - 25) * 0.64)
+        FIRST_25 + (number_of_pages - 25) * 0.64
       else
-        (HANDLING_CHARGE + (number_of_pages) * 0.96)
+        HANDLING_CHARGE + number_of_pages * 0.96
     end
   end
 end
@@ -32,8 +32,11 @@ class Texas < Pricer
   MIN_CHARGE = 25.00
 
   def price
-    return MIN_CHARGE if number_of_pages <= 20
-    (MIN_CHARGE + (number_of_pages - 20) * 0.50)
+    if number_of_pages <= 20
+      MIN_CHARGE
+    else
+      MIN_CHARGE + (number_of_pages - 20) * 0.50
+    end
   end
 end
 
@@ -43,9 +46,14 @@ class Indiana < Pricer
   FIRST_50 = FIRST_10 + 0.64 * 50
 
   def price
-    return (FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
-    return (FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
-    LABOR_FEE
+    case
+      when number_of_pages > 50
+        FIRST_50 + (number_of_pages - 50) * 0.25
+      when number_of_pages > 10
+        FIRST_10 + (number_of_pages - 25) * 0.50
+      else
+        LABOR_FEE
+    end
   end
 end
 
@@ -55,11 +63,15 @@ class NorthCarolina < Pricer
   MIN_CHARGE = 10.00
 
   def price
-    return (FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
-    return (FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
-    price = ((number_of_pages) * 0.75)
-    return MIN_CHARGE if price < MIN_CHARGE #min charge
-    price
+    case
+      when number_of_pages > 100
+        FIRST_100 + (number_of_pages - 100) * 0.25
+      when number_of_pages > 25
+        FIRST_25 + (number_of_pages - 25) * 0.50
+      else
+        price = number_of_pages * 0.75
+        price < MIN_CHARGE ? MIN_CHARGE : price
+    end
   end
 end
 
@@ -69,6 +81,7 @@ class NewJersey < Pricer
 
   def price
     return 0 if number_of_pages <= 0
+
     if number_of_pages > 100
       temp = 100 * PRICE_PER_PAGE_LOW + (number_of_pages-100) * 0.25 + SEARCH_FEE
       temp > 200 ? 200.00 : temp.round(2)
@@ -94,7 +107,7 @@ class NewYork < Pricer
       if number_of_pages <=15
         number_of_pages * 2.00
       else
-        15 * 2.00 + ((number_of_pages - 15) * 1.00)
+        15 * 2.00 + (number_of_pages - 15) * 1.00
       end
     end
   end
