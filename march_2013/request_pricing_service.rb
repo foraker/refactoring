@@ -11,7 +11,7 @@ class RequestPricingService
     HANDLING_CHARGE = 25.55
     FIRST_25 = HANDLING_CHARGE + 0.96 * 25
     FIRST_50 = FIRST_25 + 0.64 * 50
-    
+
     def price
       return HANDLING_CHARGE if number_of_pages < 1
       return (FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
@@ -29,10 +29,16 @@ class RequestPricingService
     end
   end
 
-  class Indiana
+  class Indiana < State
     LABOR_FEE = 20.00
     FIRST_10 = LABOR_FEE
     FIRST_50 = FIRST_10 + 0.64 * 50
+
+    def price
+      return (FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
+      return (FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
+      return LABOR_FEE
+    end
   end
 
   class NorthCarolina
@@ -49,6 +55,8 @@ class RequestPricingService
           Illinois.new(number_of_pages).price
         when "TX"
           Texas.new(number_of_pages).price
+        when "IN"
+          Indiana.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -61,13 +69,6 @@ class RequestPricingService
       0.00
     end
   end
-
-  def self.pages_price_IN(request, number_of_pages)
-    return (Indiana::FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
-    return (Indiana::FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
-    return Indiana::LABOR_FEE
-  end
-
 
   def self.pages_price_NC(request, number_of_pages)
     return (NorthCarolina::FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
