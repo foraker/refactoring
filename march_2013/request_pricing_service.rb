@@ -58,6 +58,7 @@ class RequestPricingService
   class NewJersey < State
     PRICE_PER_PAGE_LOW = 1.00
     SEARCH_FEE = 10.00
+
     def price
       return 0 if number_of_pages <= 0
       if number_of_pages > 100
@@ -66,6 +67,14 @@ class RequestPricingService
       else
         return number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
       end
+    end
+  end
+
+  class California < State
+    CA_TIME_CHARGE = 4.00
+
+    def price
+      0.10 * number_of_pages + CA_TIME_CHARGE
     end
   end
 
@@ -83,6 +92,8 @@ class RequestPricingService
           NorthCarolina.new(number_of_pages).price
         when "NJ"
           NewJersey.new(number_of_pages).price
+        when "CA"
+          California.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -94,20 +105,6 @@ class RequestPricingService
     else
       0.00
     end
-  end
-
-  CA_TIME_CHARGE = 4.00
-
-  # California
-  # Ten cents ($.10) per page for documents 8.5x14 inches or less
-  # Twenty cents ($.20) per page for document copies from microfilm
-  # Actual costs for oversize documents or special processing
-  # Reasonable clerical costs to retrieve records; $4.00 per quarter hour or less
-  # Actual postage charges
-
-  #Note - initially we will assume it takes 15 minutes of work to process each record
-  def self.pages_price_CA(request, number_of_pages)
-    0.10 * number_of_pages + CA_TIME_CHARGE
   end
 
   #Reasonable charge for paper copies shall not exceed $.75 / page plus postage or shipping and sales tax, if applicable.
