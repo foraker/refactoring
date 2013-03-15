@@ -2,119 +2,178 @@ class RequestPricingService
   def self.price(request, number_of_pages)
     if number_of_pages
       state = request.state.upcase
-      begin
-        return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
-      # rescue Exception # TOO DANGEROUS
-      rescue NoMethodError
-        puts "None of the states match pricing rules we defined, #{request.state} for request"
-        pages_price_NOSTATUTE(request, number_of_pages)
-      end
-   else
-     0.00
-   end
-  end
-
-  IL_HANDLING_CHARGE = 25.55
-  IL_FIRST_25 = IL_HANDLING_CHARGE + 0.96 * 25
-  IL_FIRST_50 = IL_FIRST_25 + 0.64 * 50
-
-  def self.pages_price_IL(request, number_of_pages)
-    return IL_HANDLING_CHARGE if number_of_pages < 1
-    return (IL_FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
-    return (IL_FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    return (IL_HANDLING_CHARGE + (number_of_pages) * 0.96)
-  end
-
-  TX_MIN_CHARGE = 25.00
-
-  #In addition, actual cost of mailing or shipping
-  #  Also, a reasonable fee not to exceed $15.00 for executing affidavit.
-  def self.pages_price_TX(request, number_of_pages)
-    return TX_MIN_CHARGE if number_of_pages <= 20
-    return (TX_MIN_CHARGE + (number_of_pages - 20) * 0.50)
-  end
-
-  IN_LABOR_FEE = 20.00
-  IN_FIRST_10 = IN_LABOR_FEE
-  IN_FIRST_50 = IN_FIRST_10 + 0.64 * 50
-
-  def self.pages_price_IN(request, number_of_pages)
-    return (IN_FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50  #>50
-    return (IN_FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10  # 11-50
-    return IN_LABOR_FEE
-  end
-
-  NC_FIRST_25 = 0.75 * 25
-  NC_FIRST_100 = NC_FIRST_25 + 0.50 * 75
-  NC_MIN_CHARGE = 10.00
-
-  def self.pages_price_NC(request, number_of_pages)
-    return (NC_FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
-    return (NC_FIRST_25 + (number_of_pages -  25) * 0.50) if number_of_pages > 25
-    price = ((number_of_pages) * 0.75)
-    return NC_MIN_CHARGE if price < NC_MIN_CHARGE #min charge
-    return price
-  end
-
-  #ALL Others  - $185 flat fee + $15 transaction fee
-  def self.pages_price_NJ(request, number_of_pages)
-    return 0 if number_of_pages <= 0
-    price_per_page_low = 1.00
-    search_fee = 10.00
-    if number_of_pages > 100
-       temp =  100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
-       return temp>200 ? 200.00 : temp.round(2)
-    else
-       return number_of_pages * price_per_page_low + search_fee
-    end
-  end
-
-  CA_TIME_CHARGE = 4.00
-
-  # California
-  # Ten cents ($.10) per page for documents 8.5x14 inches or less
-  # Twenty cents ($.20) per page for document copies from microfilm
-  # Actual costs for oversize documents or special processing
-  # Reasonable clerical costs to retrieve records; $4.00 per quarter hour or less
-  # Actual postage charges
-
-  #Note - initially we will assume it takes 15 minutes of work to process each record
-  def self.pages_price_CA(request, number_of_pages)
-    0.10 * number_of_pages + CA_TIME_CHARGE
-  end
-
-  #Reasonable charge for paper copies shall not exceed $.75 / page plus postage or shipping and sales tax, if applicable.
-  #Requested by qualified person for purposes other than facilitate patients' ongoing health care: $2 / page for first 15 pages, then $1 / page, plus postage.
-  def self.pages_price_NY(request, number_of_pages)
-    if request.requested_by_doctor?
-      number_of_pages * 0.75
-    else
-      if number_of_pages <=15
-        return number_of_pages * 2.00
+      price_handler = if PricingHandlers.const_defined?(state.to_sym)
+        PricingHandlers.const_get(state.to_sym).new(request, number_of_pages)
       else
-        return 15 * 2.00 + ((number_of_pages - 15) * 1.00)
+        PricingHandlers::NoState.new(request, number_of_pages)
       end
+      price_handler.value
+    else
+      0.00
     end
   end
 
-  def self.pages_price_NV(request, number_of_pages)
-    0.60 * number_of_pages #No administrative fee or additional service fee of any kind may be charged for furnishing a copy
-  end
+  module PricingHandlers
+    class BaseHandler
+      attr_reader :request, :number_of_pages
 
-  #"UT" => "Base free of $15.00, $0.50/page"
-  #"NC" => "Base free of $15.00, $0.50/page, max certification fee $9.32"
+      def initialize(request, number_of_pages)
+        @request = request
+        @number_of_pages = number_of_pages
+      end
 
-  def self.pages_price_UT(request, number_of_pages)
-    return 0 if number_of_pages <= 0
-    15.00 + number_of_pages * 0.50
-  end
+      def doctor?
+        request.requested_by_doctor?
+      end
+    end
 
-  #Patients / Plantiff Lawyers - $60 flat fee + $1 / page + $15 transaction fee.
-  def self.pages_price_NOSTATUTE(request, number_of_pages)
-    if request.requested_by_doctor?
-      fee = 60.00 + number_of_pages * 1.00
-    else
-      return 185.00
+    class IL < BaseHandler
+      HANDLING_CHARGE = 25.55
+      HANDLING_QUOTIENT = 0.32
+
+      def value
+        if number_of_pages < 1
+          HANDLING_CHARGE
+        elsif number_of_pages > 50
+          first_50_handling_charge + (number_of_pages - 50) * HANDLING_QUOTIENT
+        elsif number_of_pages > 25
+          first_25_handling_charge + (number_of_pages - 25) * (HANDLING_QUOTIENT * 2)
+        else
+          HANDLING_CHARGE + (number_of_pages) * (HANDLING_QUOTIENT * 3)
+        end
+      end
+
+      def first_25_handling_charge
+        HANDLING_CHARGE + 0.96 * 25
+      end
+
+      def first_50_handling_charge
+        first_25_handling_charge + 0.64 * 50
+      end
+    end
+
+    class TX < BaseHandler
+      MIN_CHARGE = 25.00
+
+      def value
+        if number_of_pages <= 20
+          MIN_CHARGE
+        else
+          MIN_CHARGE + (number_of_pages - 20) * 0.50
+        end
+      end
+    end
+
+    class IN < BaseHandler
+      LABOR_FEE = 20.00
+      HANDLING_QUOTIENT = 0.25
+
+      def value
+        if number_of_pages > 50
+          first_50_handling_charge + (number_of_pages - 50) * HANDLING_QUOTIENT
+        elsif number_of_pages > 10
+          LABOR_FEE + (number_of_pages - 25) * (HANDLING_QUOTIENT * 2)
+        else
+          LABOR_FEE
+        end
+      end
+
+      def first_50_handling_charge
+        LABOR_FEE + 0.64 * 50
+      end
+    end
+
+    class NC < BaseHandler
+      FIRST_25 = 18.75
+      MIN_CHARGE = 10.00
+      HANDLING_QUOTIENT = 0.25
+
+      def value
+        if number_of_pages > 100
+          first_100_handling_charge + (number_of_pages - 100) * HANDLING_QUOTIENT
+        elsif number_of_pages > 25
+          FIRST_25 + (number_of_pages -  25) * (HANDLING_QUOTIENT * 2)
+        else
+          [base_price, MIN_CHARGE].max
+        end
+      end
+
+      def base_price
+        (number_of_pages) * 0.75
+      end
+
+      def first_100_handling_charge
+        FIRST_25 + 37.5
+      end
+    end
+
+    class NJ < BaseHandler
+      PRICE_PER_PAGE_LOW = 1.00
+      SEARCH_FEE = 10.00
+
+      def value
+        if number_of_pages <= 0
+          0
+        elsif number_of_pages > 100
+          [base_price.round(2), 200].min
+        else
+          number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
+        end
+      end
+
+      def base_price
+        100 * PRICE_PER_PAGE_LOW + (number_of_pages - 100) * 0.25 + SEARCH_FEE
+      end
+    end
+
+    class CA < BaseHandler
+      TIME_CHARGE = 4.00
+      HANDLING_QUOTIENT = 0.10
+
+      def value
+        TIME_CHARGE + number_of_pages * HANDLING_QUOTIENT
+      end
+    end
+
+    class NV < BaseHandler
+      def value
+        0.60 * number_of_pages
+      end
+    end
+
+    class UT < BaseHandler
+      HANDLING_QUOTIENT = 0.50
+      def value
+        if number_of_pages <= 0
+          0
+        else
+          15.00 + number_of_pages * HANDLING_QUOTIENT
+        end
+      end
+    end
+
+    class NY < BaseHandler
+      def value
+        if doctor?
+          number_of_pages * 0.75
+        else
+          if number_of_pages <= 15
+            number_of_pages * 2.00
+          else
+            15 * 2.00 + ((number_of_pages - 15) * 1.00)
+          end
+        end
+      end
+    end
+
+    class NoState < BaseHandler
+      def value
+        if doctor?
+          60.00 + number_of_pages * 1.00
+        else
+          185.00
+        end
+      end
     end
   end
 end
