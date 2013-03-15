@@ -18,7 +18,7 @@ class Illinois < State
     return HANDLING_CHARGE if number_of_pages < 1
     return (FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
     return (FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    return (HANDLING_CHARGE + (number_of_pages) * 0.96)
+    (HANDLING_CHARGE + (number_of_pages) * 0.96)
   end
 end
 
@@ -27,7 +27,7 @@ class Texas < State
 
   def price
     return MIN_CHARGE if number_of_pages <= 20
-    return (MIN_CHARGE + (number_of_pages - 20) * 0.50)
+    (MIN_CHARGE + (number_of_pages - 20) * 0.50)
   end
 end
 
@@ -39,7 +39,7 @@ class Indiana < State
   def price
     return (FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
     return (FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
-    return LABOR_FEE
+    LABOR_FEE
   end
 end
 
@@ -53,7 +53,7 @@ class NorthCarolina < State
     return (FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
     price = ((number_of_pages) * 0.75)
     return MIN_CHARGE if price < MIN_CHARGE #min charge
-    return price
+    price
   end
 end
 
@@ -65,9 +65,9 @@ class NewJersey < State
     return 0 if number_of_pages <= 0
     if number_of_pages > 100
       temp = 100 * PRICE_PER_PAGE_LOW + (number_of_pages-100) * 0.25 + SEARCH_FEE
-      return temp>200 ? 200.00 : temp.round(2)
+      temp > 200 ? 200.00 : temp.round(2)
     else
-      return number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
+      number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
     end
   end
 end
@@ -86,9 +86,9 @@ class NewYork < State
       number_of_pages * 0.75
     else
       if number_of_pages <=15
-        return number_of_pages * 2.00
+        number_of_pages * 2.00
       else
-        return 15 * 2.00 + ((number_of_pages - 15) * 1.00)
+        15 * 2.00 + ((number_of_pages - 15) * 1.00)
       end
     end
   end
@@ -102,8 +102,11 @@ end
 
 class Utah < State
   def price
-    return 0 if number_of_pages <= 0
-    15.00 + number_of_pages * 0.50
+    if number_of_pages <= 0
+      0
+    else
+      15.00 + number_of_pages * 0.50
+    end
   end
 end
 
@@ -119,7 +122,7 @@ class NoStatute
     if request.requested_by_doctor?
       60.00 + number_of_pages * 1.00
     else
-      return 185.00
+      185.00
     end
   end
 end
