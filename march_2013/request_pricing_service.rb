@@ -1,6 +1,6 @@
 require_relative 'states/abbreviations'
 
-class State
+class Pricer
   attr_reader :number_of_pages, :request
 
   def initialize(number_of_pages, request = nil)
@@ -9,7 +9,7 @@ class State
   end
 end
 
-class Illinois < State
+class Illinois < Pricer
   HANDLING_CHARGE = 25.55
   FIRST_25 = HANDLING_CHARGE + 0.96 * 25
   FIRST_50 = FIRST_25 + 0.64 * 50
@@ -28,7 +28,7 @@ class Illinois < State
   end
 end
 
-class Texas < State
+class Texas < Pricer
   MIN_CHARGE = 25.00
 
   def price
@@ -37,7 +37,7 @@ class Texas < State
   end
 end
 
-class Indiana < State
+class Indiana < Pricer
   LABOR_FEE = 20.00
   FIRST_10 = LABOR_FEE
   FIRST_50 = FIRST_10 + 0.64 * 50
@@ -49,7 +49,7 @@ class Indiana < State
   end
 end
 
-class NorthCarolina < State
+class NorthCarolina < Pricer
   FIRST_25 = 0.75 * 25
   FIRST_100 = FIRST_25 + 0.50 * 75
   MIN_CHARGE = 10.00
@@ -63,7 +63,7 @@ class NorthCarolina < State
   end
 end
 
-class NewJersey < State
+class NewJersey < Pricer
   PRICE_PER_PAGE_LOW = 1.00
   SEARCH_FEE = 10.00
 
@@ -78,7 +78,7 @@ class NewJersey < State
   end
 end
 
-class California < State
+class California < Pricer
   CA_TIME_CHARGE = 4.00
 
   def price
@@ -86,7 +86,7 @@ class California < State
   end
 end
 
-class NewYork < State
+class NewYork < Pricer
   def price
     if request.requested_by_doctor?
       number_of_pages * 0.75
@@ -100,13 +100,13 @@ class NewYork < State
   end
 end
 
-class Nevada < State
+class Nevada < Pricer
   def price
     0.60 * number_of_pages
   end
 end
 
-class Utah < State
+class Utah < Pricer
   def price
     if number_of_pages <= 0
       0
@@ -116,14 +116,7 @@ class Utah < State
   end
 end
 
-class NoStatute
-  attr_reader :number_of_pages, :request
-
-  def initialize(number_of_pages, request = nil)
-    @number_of_pages = number_of_pages
-    @request = request
-  end
-
+class NoStatute < Pricer
   def price
     if request.requested_by_doctor?
       60.00 + number_of_pages * 1.00
