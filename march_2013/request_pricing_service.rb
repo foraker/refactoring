@@ -55,6 +55,20 @@ class RequestPricingService
     end
   end
 
+  class NewJersey < State
+    PRICE_PER_PAGE_LOW = 1.00
+    SEARCH_FEE = 10.00
+    def price
+      return 0 if number_of_pages <= 0
+      if number_of_pages > 100
+        temp = 100 * PRICE_PER_PAGE_LOW + (number_of_pages-100) * 0.25 + SEARCH_FEE
+        return temp>200 ? 200.00 : temp.round(2)
+      else
+        return number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
+      end
+    end
+  end
+
   def self.price(request, number_of_pages)
     if number_of_pages
       state = request.state.upcase
@@ -67,6 +81,8 @@ class RequestPricingService
           Indiana.new(number_of_pages).price
         when "NC"
           NorthCarolina.new(number_of_pages).price
+        when "NJ"
+          NewJersey.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -77,19 +93,6 @@ class RequestPricingService
       end
     else
       0.00
-    end
-  end
-
-  #ALL Others  - $185 flat fee + $15 transaction fee
-  def self.pages_price_NJ(request, number_of_pages)
-    return 0 if number_of_pages <= 0
-    price_per_page_low = 1.00
-    search_fee = 10.00
-    if number_of_pages > 100
-      temp = 100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
-      return temp>200 ? 200.00 : temp.round(2)
-    else
-      return number_of_pages * price_per_page_low + search_fee
     end
   end
 
