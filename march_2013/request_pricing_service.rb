@@ -105,6 +105,21 @@ class RequestPricingService
     end
   end
 
+  class NoStatute
+    attr_reader :number_of_pages
+
+    def initialize(number_of_pages)
+      @number_of_pages = number_of_pages
+    end
+
+    def price(request)
+      if request.requested_by_doctor?
+        60.00 + number_of_pages * 1.00
+      else
+        return 185.00
+      end
+    end
+  end
 
   def self.price(request, number_of_pages)
     if number_of_pages
@@ -129,24 +144,10 @@ class RequestPricingService
         when "UT"
           Utah.new(number_of_pages).price
         else
-          begin
-            return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
-          rescue NoMethodError
-            puts "None of the states match pricing rules we defined, #{request.state} for request"
-            pages_price_NOSTATUTE(request, number_of_pages)
-          end
+          NoStatute.new(number_of_pages).price(request)
       end
     else
       0.00
-    end
-  end
-
-  #Patients / Plantiff Lawyers - $60 flat fee + $1 / page + $15 transaction fee.
-  def self.pages_price_NOSTATUTE(request, number_of_pages)
-    if request.requested_by_doctor?
-      fee = 60.00 + number_of_pages * 1.00
-    else
-      return 185.00
     end
   end
 end
