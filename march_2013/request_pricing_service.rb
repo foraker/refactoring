@@ -20,6 +20,17 @@ class RequestPricingService
 
   class Texas
     MIN_CHARGE = 25.00
+
+    attr_reader :number_of_pages
+
+    def initialize(number_of_pages)
+      @number_of_pages = number_of_pages
+    end
+
+    def price
+      return MIN_CHARGE if number_of_pages <= 20
+      return (MIN_CHARGE + (number_of_pages - 20) * 0.50)
+    end
   end
 
   class Indiana
@@ -40,6 +51,8 @@ class RequestPricingService
       case state
         when "IL"
           Illinois.new(number_of_pages).price
+        when "TX"
+          Texas.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -52,14 +65,6 @@ class RequestPricingService
       0.00
     end
   end
-
-  #In addition, actual cost of mailing or shipping
-  #  Also, a reasonable fee not to exceed $15.00 for executing affidavit.
-  def self.pages_price_TX(request, number_of_pages)
-    return Texas::MIN_CHARGE if number_of_pages <= 20
-    return (Texas::MIN_CHARGE + (number_of_pages - 20) * 0.50)
-  end
-
 
   def self.pages_price_IN(request, number_of_pages)
     return (Indiana::FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
