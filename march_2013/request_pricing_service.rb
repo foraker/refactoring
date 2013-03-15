@@ -1,56 +1,47 @@
+require './state_pricing/illinois'
+require './state_pricing/texaz'
+
 class RequestPricingService
-  def self.price(request, number_of_pages)
-    if number_of_pages
-      state = request.state.upcase
-      begin
-        return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
-      # rescue Exception # TOO DANGEROUS
-      rescue NoMethodError
-        puts "None of the states match pricing rules we defined, #{request.state} for request"
-        pages_price_NOSTATUTE(request, number_of_pages)
-      end
-   else
-     0.00
-   end
-  end
-
-  IL_HANDLING_CHARGE = 25.55
-  IL_FIRST_25 = IL_HANDLING_CHARGE + 0.96 * 25
-  IL_FIRST_50 = IL_FIRST_25 + 0.64 * 50
-
-  def self.pages_price_IL(request, number_of_pages)
-    return IL_HANDLING_CHARGE if number_of_pages < 1
-    return (IL_FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
-    return (IL_FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    return (IL_HANDLING_CHARGE + (number_of_pages) * 0.96)
-  end
-
-  TX_MIN_CHARGE = 25.00
-
-  #In addition, actual cost of mailing or shipping
-  #  Also, a reasonable fee not to exceed $15.00 for executing affidavit.
-  def self.pages_price_TX(request, number_of_pages)
-    return TX_MIN_CHARGE if number_of_pages <= 20
-    return (TX_MIN_CHARGE + (number_of_pages - 20) * 0.50)
-  end
-
   IN_LABOR_FEE = 20.00
   IN_FIRST_10 = IN_LABOR_FEE
   IN_FIRST_50 = IN_FIRST_10 + 0.64 * 50
-
-  def self.pages_price_IN(request, number_of_pages)
-    return (IN_FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50  #>50
-    return (IN_FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10  # 11-50
-    return IN_LABOR_FEE
-  end
-
+  CA_TIME_CHARGE = 4.00
   NC_FIRST_25 = 0.75 * 25
   NC_FIRST_100 = NC_FIRST_25 + 0.50 * 75
   NC_MIN_CHARGE = 10.00
 
+  def self.price(request, number_of_pages = nil)
+    return 0.00 unless number_of_pages
+
+    new_states = {
+     :tx => StatePricing::Texaz,
+     :il => StatePricing::Illinois
+    }
+
+    if pricer = new_states[request.state.downcase.to_sym]
+      return pricer.price(request, number_of_pages)
+    end
+
+
+    begin
+      return RequestPricingService.send("pages_price_#{request.state}", request, number_of_pages)
+    rescue NoMethodError
+      pages_price_NOSTATUTE(request, number_of_pages)
+    end
+  end
+
+  #In addition, actual cost of mailing or shipping
+  #  Also, a reasonable fee not to exceed $15.00 for executing affidavit.
+
+  def self.pages_price_IN(request, number_of_pages)
+    return (IN_FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
+    return (IN_FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
+    return IN_LABOR_FEE
+  end
+
   def self.pages_price_NC(request, number_of_pages)
     return (NC_FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
-    return (NC_FIRST_25 + (number_of_pages -  25) * 0.50) if number_of_pages > 25
+    return (NC_FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
     price = ((number_of_pages) * 0.75)
     return NC_MIN_CHARGE if price < NC_MIN_CHARGE #min charge
     return price
@@ -62,14 +53,13 @@ class RequestPricingService
     price_per_page_low = 1.00
     search_fee = 10.00
     if number_of_pages > 100
-       temp =  100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
-       return temp>200 ? 200.00 : temp.round(2)
+      temp = 100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
+      return temp>200 ? 200.00 : temp.round(2)
     else
-       return number_of_pages * price_per_page_low + search_fee
+      return number_of_pages * price_per_page_low + search_fee
     end
   end
 
-  CA_TIME_CHARGE = 4.00
 
   # California
   # Ten cents ($.10) per page for documents 8.5x14 inches or less
