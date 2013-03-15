@@ -41,10 +41,18 @@ class RequestPricingService
     end
   end
 
-  class NorthCarolina
+  class NorthCarolina < State
     FIRST_25 = 0.75 * 25
     FIRST_100 = FIRST_25 + 0.50 * 75
     MIN_CHARGE = 10.00
+
+    def price
+      return (FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
+      return (FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
+      price = ((number_of_pages) * 0.75)
+      return MIN_CHARGE if price < MIN_CHARGE #min charge
+      return price
+    end
   end
 
   def self.price(request, number_of_pages)
@@ -57,6 +65,8 @@ class RequestPricingService
           Texas.new(number_of_pages).price
         when "IN"
           Indiana.new(number_of_pages).price
+        when "NC"
+          NorthCarolina.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -68,14 +78,6 @@ class RequestPricingService
     else
       0.00
     end
-  end
-
-  def self.pages_price_NC(request, number_of_pages)
-    return (NorthCarolina::FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
-    return (NorthCarolina::FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
-    price = ((number_of_pages) * 0.75)
-    return NorthCarolina::MIN_CHARGE if price < NorthCarolina::MIN_CHARGE #min charge
-    return price
   end
 
   #ALL Others  - $185 flat fee + $15 transaction fee
