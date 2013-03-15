@@ -15,10 +15,16 @@ class Illinois < State
   FIRST_50 = FIRST_25 + 0.64 * 50
 
   def price
-    return HANDLING_CHARGE if number_of_pages < 1
-    return (FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
-    return (FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    (HANDLING_CHARGE + (number_of_pages) * 0.96)
+    case
+      when number_of_pages < 1
+        HANDLING_CHARGE
+      when number_of_pages > 50
+        (FIRST_50 + (number_of_pages - 50) * 0.32)
+      when number_of_pages > 25
+        (FIRST_25 + (number_of_pages - 25) * 0.64)
+      else
+        (HANDLING_CHARGE + (number_of_pages) * 0.96)
+    end
   end
 end
 
