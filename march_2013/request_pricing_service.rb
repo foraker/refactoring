@@ -76,17 +76,18 @@ class NorthCarolina < Pricer
 end
 
 class NewJersey < Pricer
-  PRICE_PER_PAGE_LOW = 1.00
+  FIRST_100 = 1.00
+  AFTER_100 = 0.25
   SEARCH_FEE = 10.00
 
   def price
     return 0 if number_of_pages <= 0
 
     if number_of_pages > 100
-      temp = 100 * PRICE_PER_PAGE_LOW + (number_of_pages-100) * 0.25 + SEARCH_FEE
+      temp = SEARCH_FEE + 100 * FIRST_100 + (number_of_pages-100) * AFTER_100 
       temp > 200 ? 200.00 : temp.round(2)
     else
-      number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
+      number_of_pages * FIRST_100 + SEARCH_FEE
     end
   end
 end
