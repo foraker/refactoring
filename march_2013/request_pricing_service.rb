@@ -122,32 +122,30 @@ class RequestPricingService
   end
 
   def self.price(request, number_of_pages)
-    if number_of_pages
-      state = request.state.upcase
-      case state
-        when "IL"
-          Illinois.new(number_of_pages).price
-        when "TX"
-          Texas.new(number_of_pages).price
-        when "IN"
-          Indiana.new(number_of_pages).price
-        when "NC"
-          NorthCarolina.new(number_of_pages).price
-        when "NJ"
-          NewJersey.new(number_of_pages).price
-        when "CA"
-          California.new(number_of_pages).price
-        when "NY"
-          NewYork.new(number_of_pages).price(request)
-        when "NV"
-          Nevada.new(number_of_pages).price
-        when "UT"
-          Utah.new(number_of_pages).price
-        else
-          NoStatute.new(number_of_pages).price(request)
-      end
-    else
-      0.00
+    return 0.00 unless number_of_pages
+
+    state = request.state.upcase
+    case state
+      when "IL"
+        Illinois.new(number_of_pages).price
+      when "TX"
+        Texas.new(number_of_pages).price
+      when "IN"
+        Indiana.new(number_of_pages).price
+      when "NC"
+        NorthCarolina.new(number_of_pages).price
+      when "NJ"
+        NewJersey.new(number_of_pages).price
+      when "CA"
+        California.new(number_of_pages).price
+      when "NY"
+        NewYork.new(number_of_pages).price(request)
+      when "NV"
+        Nevada.new(number_of_pages).price
+      when "UT"
+        Utah.new(number_of_pages).price
+      else
+        NoStatute.new(number_of_pages).price(request)
     end
   end
 end
