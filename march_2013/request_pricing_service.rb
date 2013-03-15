@@ -84,7 +84,7 @@ class NewJersey < Pricer
     return 0 if number_of_pages <= 0
 
     if number_of_pages > 100
-      temp = SEARCH_FEE + 100 * FIRST_100 + (number_of_pages-100) * AFTER_100 
+      temp = SEARCH_FEE + 100 * FIRST_100 + (number_of_pages-100) * AFTER_100
       temp > 200 ? 200.00 : temp.round(2)
     else
       number_of_pages * FIRST_100 + SEARCH_FEE
@@ -101,14 +101,17 @@ class California < Pricer
 end
 
 class NewYork < Pricer
+  FIRST_15 = 2.00
+  AFTER_15 = 1.00
+
   def price
     if request.requested_by_doctor?
       number_of_pages * 0.75
     else
-      if number_of_pages <=15
-        number_of_pages * 2.00
+      if number_of_pages <= 15
+        number_of_pages * FIRST_15
       else
-        15 * 2.00 + (number_of_pages - 15) * 1.00
+        15 * FIRST_15 + (number_of_pages - 15) * AFTER_15
       end
     end
   end
