@@ -78,6 +78,20 @@ class RequestPricingService
     end
   end
 
+  class NewYork < State
+    def price(request)
+      if request.requested_by_doctor?
+        number_of_pages * 0.75
+      else
+        if number_of_pages <=15
+          return number_of_pages * 2.00
+        else
+          return 15 * 2.00 + ((number_of_pages - 15) * 1.00)
+        end
+      end
+    end
+  end
+
   def self.price(request, number_of_pages)
     if number_of_pages
       state = request.state.upcase
@@ -94,6 +108,8 @@ class RequestPricingService
           NewJersey.new(number_of_pages).price
         when "CA"
           California.new(number_of_pages).price
+        when "NY"
+          NewYork.new(number_of_pages).price(request)
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -104,20 +120,6 @@ class RequestPricingService
       end
     else
       0.00
-    end
-  end
-
-  #Reasonable charge for paper copies shall not exceed $.75 / page plus postage or shipping and sales tax, if applicable.
-  #Requested by qualified person for purposes other than facilitate patients' ongoing health care: $2 / page for first 15 pages, then $1 / page, plus postage.
-  def self.pages_price_NY(request, number_of_pages)
-    if request.requested_by_doctor?
-      number_of_pages * 0.75
-    else
-      if number_of_pages <=15
-        return number_of_pages * 2.00
-      else
-        return 15 * 2.00 + ((number_of_pages - 15) * 1.00)
-      end
     end
   end
 
