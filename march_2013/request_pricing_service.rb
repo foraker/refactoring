@@ -143,13 +143,15 @@ class RequestPricingService
   def self.price(request, number_of_pages)
     return 0.00 unless number_of_pages
 
-    state_abbr = request.state.upcase
-    state_name = States::ABBREVIATIONS_MAPPING[state_abbr].gsub(" ", "")
+    state_abbreviation = request.state.upcase
+    state_name = States::ABBREVIATIONS_MAPPING[state_abbreviation].gsub(" ", "")
 
-    begin
-      const_get(state_name).new(number_of_pages, request).price
+    pricer = begin
+      const_get(state_name).new(number_of_pages, request)
     rescue
-      NoStatute.new(number_of_pages, request).price
+      NoStatute.new(number_of_pages, request)
     end
+
+    pricer.price
   end
 end
