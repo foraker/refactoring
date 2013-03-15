@@ -1,15 +1,17 @@
 class RequestPricingService
-  class Illinois
-    HANDLING_CHARGE = 25.55
-    FIRST_25 = HANDLING_CHARGE + 0.96 * 25
-    FIRST_50 = FIRST_25 + 0.64 * 50
-
+  class State
     attr_reader :number_of_pages
 
     def initialize(number_of_pages)
       @number_of_pages = number_of_pages
     end
+  end
 
+  class Illinois < State
+    HANDLING_CHARGE = 25.55
+    FIRST_25 = HANDLING_CHARGE + 0.96 * 25
+    FIRST_50 = FIRST_25 + 0.64 * 50
+    
     def price
       return HANDLING_CHARGE if number_of_pages < 1
       return (FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
@@ -18,14 +20,8 @@ class RequestPricingService
     end
   end
 
-  class Texas
+  class Texas < State
     MIN_CHARGE = 25.00
-
-    attr_reader :number_of_pages
-
-    def initialize(number_of_pages)
-      @number_of_pages = number_of_pages
-    end
 
     def price
       return MIN_CHARGE if number_of_pages <= 20
