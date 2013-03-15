@@ -98,6 +98,13 @@ class RequestPricingService
     end
   end
 
+  class Utah < State
+    def price
+      return 0 if number_of_pages <= 0
+      15.00 + number_of_pages * 0.50
+    end
+  end
+
 
   def self.price(request, number_of_pages)
     if number_of_pages
@@ -119,6 +126,8 @@ class RequestPricingService
           NewYork.new(number_of_pages).price(request)
         when "NV"
           Nevada.new(number_of_pages).price
+        when "UT"
+          Utah.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -130,11 +139,6 @@ class RequestPricingService
     else
       0.00
     end
-  end
-
-  def self.pages_price_UT(request, number_of_pages)
-    return 0 if number_of_pages <= 0
-    15.00 + number_of_pages * 0.50
   end
 
   #Patients / Plantiff Lawyers - $60 flat fee + $1 / page + $15 transaction fee.
