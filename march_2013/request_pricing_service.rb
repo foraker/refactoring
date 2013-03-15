@@ -92,6 +92,13 @@ class RequestPricingService
     end
   end
 
+  class Nevada < State
+    def price
+      0.60 * number_of_pages
+    end
+  end
+
+
   def self.price(request, number_of_pages)
     if number_of_pages
       state = request.state.upcase
@@ -110,6 +117,8 @@ class RequestPricingService
           California.new(number_of_pages).price
         when "NY"
           NewYork.new(number_of_pages).price(request)
+        when "NV"
+          Nevada.new(number_of_pages).price
         else
           begin
             return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
@@ -122,13 +131,6 @@ class RequestPricingService
       0.00
     end
   end
-
-  def self.pages_price_NV(request, number_of_pages)
-    0.60 * number_of_pages #No administrative fee or additional service fee of any kind may be charged for furnishing a copy
-  end
-
-  #"UT" => "Base free of $15.00, $0.50/page"
-  #"NC" => "Base free of $15.00, $0.50/page, max certification fee $9.32"
 
   def self.pages_price_UT(request, number_of_pages)
     return 0 if number_of_pages <= 0
