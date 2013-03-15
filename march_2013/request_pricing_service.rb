@@ -32,14 +32,14 @@ class RequestPricingService
       HANDLING_QUOTIENT = 0.32
 
       def value
-        if number_of_pages < 1
-          HANDLING_CHARGE
-        elsif number_of_pages > 50
+        if number_of_pages > 50
           first_50_handling_charge + (number_of_pages - 50) * HANDLING_QUOTIENT
         elsif number_of_pages > 25
           first_25_handling_charge + (number_of_pages - 25) * (HANDLING_QUOTIENT * 2)
-        else
+        elsif number_of_pages >= 1
           HANDLING_CHARGE + (number_of_pages) * (HANDLING_QUOTIENT * 3)
+        else
+          HANDLING_CHARGE
         end
       end
 
@@ -56,10 +56,10 @@ class RequestPricingService
       MIN_CHARGE = 25.00
 
       def value
-        if number_of_pages <= 20
-          MIN_CHARGE
-        else
+        if number_of_pages > 20
           MIN_CHARGE + (number_of_pages - 20) * 0.50
+        else
+          MIN_CHARGE
         end
       end
     end
@@ -112,12 +112,12 @@ class RequestPricingService
       SEARCH_FEE = 10.00
 
       def value
-        if number_of_pages <= 0
-          0
-        elsif number_of_pages > 100
+        if number_of_pages > 100
           [base_price.round(2), 200].min
-        else
+        elsif number_of_pages > 0
           number_of_pages * PRICE_PER_PAGE_LOW + SEARCH_FEE
+        else
+          0
         end
       end
 
