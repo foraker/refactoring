@@ -42,10 +42,17 @@ class RequestPricingService
     il_first_25 = il_handling_charge + 0.96 * 25
     il_first_50 = il_first_25 + 0.64 * 50
     
-    return il_handling_charge if number_of_pages < 1
-    return (il_first_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
-    return (il_first_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    return (il_handling_charge + (number_of_pages) * 0.96)
+    # case number_of_pages
+    # when number_of_pages < 1 then il_handling_charge
+    # when number_of_pages > 50 then (il_first_50 + (number_of_pages - 50) * 0.32)
+    # when number_of_pages > 25 && number_of_pages <= 50 then (il_first_25 + (number_of_pages - 25) * 0.64)
+    # else (il_handling_charge + number_of_pages * 0.96)
+    # end
+    
+   return il_handling_charge if number_of_pages < 1
+   return (il_first_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
+   return (il_first_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
+   return (il_handling_charge + (number_of_pages) * 0.96)
 
 
   end
@@ -91,21 +98,23 @@ class RequestPricingService
 
   def self.NJ(request, number_of_pages)
     return 0 if number_of_pages <= 0
+
     price_per_page_low = 1.00
     search_fee = 10.00
+
     if number_of_pages > 100
-      temp =  100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
-      return temp>200 ? 200.00 : temp.round(2)
+      price = 100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
+      price > 200 ? 200.00 : price.round(2)
     else
-      return number_of_pages * price_per_page_low + search_fee
+      number_of_pages * price_per_page_low + search_fee
     end
   end
 
   def self.no_state(request, number_of_pages)
     if request.requested_by_doctor?
-      fee = 60.00 + number_of_pages * 1.00
+      60.00 + number_of_pages * 1.00
     else
-      return 185.00
+      185.00
     end
   end
 end
