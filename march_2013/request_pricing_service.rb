@@ -1,20 +1,33 @@
 class RequestPricingService
   class Illinois
     HANDLING_CHARGE = 25.55
-    FIRST_25 = Illinois::HANDLING_CHARGE + 0.96 * 25
-    FIRST_50 = Illinois::FIRST_25 + 0.64 * 50
+    FIRST_25 = HANDLING_CHARGE + 0.96 * 25
+    FIRST_50 = FIRST_25 + 0.64 * 50
+
+    attr_reader :number_of_pages
+
+    def initialize(number_of_pages)
+      @number_of_pages = number_of_pages
+    end
+
+    def price
+      return HANDLING_CHARGE if number_of_pages < 1
+      return (FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
+      return (FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
+      return (HANDLING_CHARGE + (number_of_pages) * 0.96)
+    end
   end
-  
+
   class Texas
     MIN_CHARGE = 25.00
   end
-  
+
   class Indiana
     LABOR_FEE = 20.00
     FIRST_10 = LABOR_FEE
     FIRST_50 = FIRST_10 + 0.64 * 50
   end
-  
+
   class NorthCarolina
     FIRST_25 = 0.75 * 25
     FIRST_100 = FIRST_25 + 0.50 * 75
@@ -24,24 +37,21 @@ class RequestPricingService
   def self.price(request, number_of_pages)
     if number_of_pages
       state = request.state.upcase
-      begin
-        return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
-      rescue NoMethodError
-        puts "None of the states match pricing rules we defined, #{request.state} for request"
-        pages_price_NOSTATUTE(request, number_of_pages)
+      case state
+        when "IL"
+          Illinois.new(number_of_pages).price
+        else
+          begin
+            return RequestPricingService.send("pages_price_#{state}", request, number_of_pages)
+          rescue NoMethodError
+            puts "None of the states match pricing rules we defined, #{request.state} for request"
+            pages_price_NOSTATUTE(request, number_of_pages)
+          end
       end
     else
       0.00
     end
   end
-
-  def self.pages_price_IL(request, number_of_pages)
-    return Illinois::HANDLING_CHARGE if number_of_pages < 1
-    return (Illinois::FIRST_50 + (number_of_pages - 50) * 0.32) if number_of_pages > 50
-    return (Illinois::FIRST_25 + (number_of_pages - 25) * 0.64) if number_of_pages > 25
-    return (Illinois::HANDLING_CHARGE + (number_of_pages) * 0.96)
-  end
-
 
   #In addition, actual cost of mailing or shipping
   #  Also, a reasonable fee not to exceed $15.00 for executing affidavit.
@@ -52,15 +62,15 @@ class RequestPricingService
 
 
   def self.pages_price_IN(request, number_of_pages)
-    return (Indiana::FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50  #>50
-    return (Indiana::FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10  # 11-50
+    return (Indiana::FIRST_50 + (number_of_pages - 50) * 0.25) if number_of_pages > 50 #>50
+    return (Indiana::FIRST_10 + (number_of_pages - 25) * 0.50) if number_of_pages > 10 # 11-50
     return Indiana::LABOR_FEE
   end
 
 
   def self.pages_price_NC(request, number_of_pages)
     return (NorthCarolina::FIRST_100 + (number_of_pages - 100) * 0.25) if number_of_pages > 100
-    return (NorthCarolina::FIRST_25 + (number_of_pages -  25) * 0.50) if number_of_pages > 25
+    return (NorthCarolina::FIRST_25 + (number_of_pages - 25) * 0.50) if number_of_pages > 25
     price = ((number_of_pages) * 0.75)
     return NorthCarolina::MIN_CHARGE if price < NorthCarolina::MIN_CHARGE #min charge
     return price
@@ -72,10 +82,10 @@ class RequestPricingService
     price_per_page_low = 1.00
     search_fee = 10.00
     if number_of_pages > 100
-       temp =  100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
-       return temp>200 ? 200.00 : temp.round(2)
+      temp = 100 * price_per_page_low + (number_of_pages-100) * 0.25 + search_fee
+      return temp>200 ? 200.00 : temp.round(2)
     else
-       return number_of_pages * price_per_page_low + search_fee
+      return number_of_pages * price_per_page_low + search_fee
     end
   end
 
