@@ -13,49 +13,112 @@ class InsightLookup
   }
 
   def initialize(applicant_score, target_score)
-    @applicant_score = applicant_score
-    @target_score = target_score
+    @applicant_score = Score.create_score(applicant_score)
+    @target_score    = Score.create_score(target_score)
   end
 
   def analyze
-    @target_score.nil? ? text_without_target : text_with_target
+    @applicant_score.text_with_target(@target_score)
   end
 
   private
 
-  def text_without_target
-    @applicant_score > 60 ? INSIGHTS[:applicant_overdeveloped_text] : INSIGHTS[:applicant_underdeveloped_text]
+  class Score < Struct.new(:score)
+    include Comparable
+
+    def self.create_score(score)
+      return nil if score.nil?
+
+      case
+      when score > 60 then OverDevelopedScore.new(score)
+      when score < 40 then UnderDevelopedScore.new(score)
+      else Score.new(score)
+      end
+    end
+
+    def <=>(other_score)
+      score <=> other_score.score
+    end
+
+    def nil?
+      score.nil?
+    end
+
+    def text_with_target(target_score)
+      ApplicantText.new(target_score, self).to_s
+    end
+
+    def prefix
+      'target_general'
+    end
+
+    def suffix
+      'underdeveloped_text'
+    end
   end
 
-  def text_with_target
-    if @applicant_score < 40 # underdeveloped
-      if @target_score < 40
-        if @applicant_score < @target_score
-          return INSIGHTS[:target_low_applicant_more_underdeveloped_text]
-        elsif @applicant_score > @target_score
-          return INSIGHTS[:target_low_applicant_less_underdeveloped_text]
-        else
-          return INSIGHTS[:target_low_applicant_less_underdeveloped_text]
-        end
-      elsif @target_score > 60
-        return INSIGHTS[:target_high_applicant_underdeveloped_text]
-      else
-        return INSIGHTS[:target_general_applicant_underdeveloped_text]
-      end
-    elsif @applicant_score > 60 #overdeveloped
-      if @target_score < 40
-        return INSIGHTS[:target_low_applicant_overdeveloped_text]
-      elsif @target_score > 60
-        if @applicant_score > @target_score
-          return INSIGHTS[:target_high_applicant_more_overdeveloped_text]
-        elsif @applicant_score < @target_score
-          return INSIGHTS[:target_high_applicant_less_overdeveloped_text]
-        else
-          return INSIGHTS[:target_high_applicant_less_overdeveloped_text]
-        end
-      else
-        return INSIGHTS[:target_general_applicant_overdeveloped_text]
-      end
+  class ApplicantText < Struct.new(:target_score, :applicant_score)
+
+    def to_s
+      return nil if applicant_score.instance_of?(Score) && !target_score.nil?
+
+      INSIGHTS[[prefix, 'applicant', middle_key, suffix].compact.join("_").to_sym]
+    end
+
+    def middle_key
+      middle ? 'more' : 'less' if has_middle?
+    end
+
+    def has_middle?
+      target_score.class == applicant_score.class
+    end
+
+    def has_prefix?
+      !target_score.nil?
+    end
+
+    def prefix
+      target_score.prefix if has_prefix?
+    end
+
+    def middle
+      applicant_score.middle(target_score)
+    end
+
+    def suffix
+      applicant_score.suffix
+    end
+  end
+
+  class OverDevelopedScore < Score
+    def text_without_target
+      INSIGHTS[:applicant_overdeveloped_text]
+    end
+
+    def middle(target_score)
+      self > target_score
+    end
+
+    def prefix
+      'target_high'
+    end
+
+    def suffix
+      'overdeveloped_text'
+    end
+  end
+
+  class UnderDevelopedScore < Score
+    def underdeveloped?
+      true
+    end
+
+    def prefix
+      'target_low'
+    end
+
+    def middle(target_score)
+      self < target_score
     end
   end
 end
