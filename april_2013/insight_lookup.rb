@@ -51,7 +51,6 @@ class InsightLookup
     end
   end
 
-  
   def text_with_low_target
    #changed to case statements so easier to read
    
@@ -65,6 +64,19 @@ class InsightLookup
        return INSIGHTS[:target_high_applicant_underdeveloped_text]
      end
   
+  end #def
+  
+  def text_with_high_target    
+    case @target_score
+
+    when 0..39 then
+         return INSIGHTS[:target_low_applicant_overdeveloped_text]
+    when 40..60 then
+        return INSIGHTS[:target_general_applicant_overdeveloped_text]
+    when 61..100 then
+          high_target_score
+    end
+    
   end #def
   
   def low_target_score
@@ -81,18 +93,5 @@ class InsightLookup
       else
         return INSIGHTS[:target_high_applicant_less_overdeveloped_text]
       end
-  end #def
-  
-  def text_with_high_target    
-    case @target_score
-
-    when 0..39 then
-         return INSIGHTS[:target_low_applicant_overdeveloped_text]
-    when 40..60 then
-        return INSIGHTS[:target_general_applicant_overdeveloped_text]
-    when 61..100 then
-          high_target_score
-    end
-    
   end #def
 end #class
