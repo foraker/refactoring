@@ -1,15 +1,15 @@
 class InsightLookup
   INSIGHTS = {
-    :applicant_overdeveloped_text                  => 'applicant overdeveloped text',
-    :applicant_underdeveloped_text                 => 'applicant underdeveloped text',
-    :target_general_applicant_overdeveloped_text   => 'target general applicant overdeveloped text',
-    :target_general_applicant_underdeveloped_text  => 'target general applicant underdeveloped text',
-    :target_high_applicant_more_overdeveloped_text => 'target high applicant more overdeveloped text',
-    :target_high_applicant_less_overdeveloped_text => 'target high applicant less overdeveloped text',
-    :target_high_applicant_underdeveloped_text     => 'target high applicant underdeveloped text',
-    :target_low_applicant_more_underdeveloped_text => 'target low applicant more underdeveloped text',
-    :target_low_applicant_less_underdeveloped_text => 'target low applicant less underdeveloped text',
-    :target_low_applicant_overdeveloped_text       => 'target low applicant overdeveloped text',
+    :applicant_overdeveloped                  => 'applicant overdeveloped text',
+    :applicant_underdeveloped                 => 'applicant underdeveloped text',
+    :target_general_applicant_overdeveloped   => 'target general applicant overdeveloped text',
+    :target_general_applicant_underdeveloped  => 'target general applicant underdeveloped text',
+    :target_high_applicant_more_overdeveloped => 'target high applicant more overdeveloped text',
+    :target_high_applicant_less_overdeveloped => 'target high applicant less overdeveloped text',
+    :target_high_applicant_underdeveloped     => 'target high applicant underdeveloped text',
+    :target_low_applicant_more_underdeveloped => 'target low applicant more underdeveloped text',
+    :target_low_applicant_less_underdeveloped => 'target low applicant less underdeveloped text',
+    :target_low_applicant_overdeveloped       => 'target low applicant overdeveloped text',
   }
 
   attr_accessor :applicant, :target
@@ -82,7 +82,7 @@ class InsightLookup
   end
 
   def text_without_target
-    applicant.overdeveloped? ? :applicant_overdeveloped_text : :applicant_underdeveloped_text
+    applicant.overdeveloped? ? :applicant_overdeveloped : :applicant_underdeveloped
   end
 
   def text_with_target
@@ -93,32 +93,32 @@ class InsightLookup
   def text_with_target_when_underdeveloped
     if target.low?
       if applicant.under?(target.score)
-        return :target_low_applicant_more_underdeveloped_text
+        return :target_low_applicant_more_underdeveloped
       elsif applicant.over?(target.score)
-        return :target_low_applicant_less_underdeveloped_text
+        return :target_low_applicant_less_underdeveloped
       else
-        return :target_low_applicant_less_underdeveloped_text
+        return :target_low_applicant_less_underdeveloped
       end
     elsif target.high?
-      return :target_high_applicant_underdeveloped_text
+      return :target_high_applicant_underdeveloped
     else
-      return :target_general_applicant_underdeveloped_text
+      return :target_general_applicant_underdeveloped
     end
   end
 
   def text_with_target_when_overdeveloped
     if target.low?
-      return :target_low_applicant_overdeveloped_text
+      return :target_low_applicant_overdeveloped
     elsif target.high?
       if applicant.over?(target.score)
-        return :target_high_applicant_more_overdeveloped_text
+        return :target_high_applicant_more_overdeveloped
       elsif applicant.under?(target.score)
-        return :target_high_applicant_less_overdeveloped_text
+        return :target_high_applicant_less_overdeveloped
       else
-        return :target_high_applicant_less_overdeveloped_text
+        return :target_high_applicant_less_overdeveloped
       end
     else
-      return :target_general_applicant_overdeveloped_text
+      return :target_general_applicant_overdeveloped
     end
   end
 end
