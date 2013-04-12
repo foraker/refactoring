@@ -27,33 +27,11 @@ class InsightLookup
   end
 
   def text_with_target
-    target_key, modifier = @target_score.target_key
+    target_key = @target_score.target_key
     applicant_modifier = @applicant_score.applicant_modifier_key(@target_score)
-    if @applicant_score.underdeveloped?
-      if @target_score.underdeveloped?
-        if @applicant_score < @target_score
-          return INSIGHTS["#{target_key}_applicant_#{applicant_modifier}_underdeveloped_text".to_sym]
-        else
-          return INSIGHTS["#{target_key}_applicant_#{applicant_modifier}_underdeveloped_text".to_sym]
-        end
-      elsif @target_score.overdeveloped?
-        return INSIGHTS["#{target_key}_applicant_underdeveloped_text".to_sym]
-      else
-        return INSIGHTS["#{target_key}_applicant_underdeveloped_text".to_sym]
-      end
-    elsif @applicant_score.overdeveloped?
-      if @target_score.underdeveloped?
-        return INSIGHTS["#{target_key}_applicant_overdeveloped_text".to_sym]
-      elsif @target_score.overdeveloped?
-        if @applicant_score > @target_score
-          return INSIGHTS["#{target_key}_applicant_#{applicant_modifier}_overdeveloped_text".to_sym]
-        else
-          return INSIGHTS["#{target_key}_applicant_#{applicant_modifier}_overdeveloped_text".to_sym]
-        end
-      else
-        return INSIGHTS["#{target_key}_applicant_overdeveloped_text".to_sym]
-      end
-    end
+    insight_key = "#{target_key}_applicant_#{applicant_modifier}_text".to_sym
+    puts insight_key
+    return INSIGHTS[insight_key]
   end
 
   class Score
@@ -84,34 +62,44 @@ class InsightLookup
   class ApplicantScore < Score
 
     def applicant_modifier_key(target_score)
-      if target_score.underdeveloped?
-        if score < target_score.score
-          "more"
-        elsif score >= target_score.score
-          "less"
+      modifier = if target_score.underdeveloped?
+          if score < target_score.score
+            "more_"
+          elsif score >= target_score.score
+            "less_"
+          end
+        elsif target_score.overdeveloped?
+          if score > target_score.score
+            "more_"
+          elsif score <= target_score.score
+            "less_"
+          end
         else
           ""
         end
-      elsif target_score.overdeveloped?
-        if score > target_score.score
-          "more"
-        elsif score <= target_score.score
-          "less"
+      
+      status = if overdeveloped?
+          "overdeveloped"
+        elsif underdeveloped?
+          "underdeveloped"
         else
           ""
-        end
-      end
+        end      
+      modifier + status
+    end
+    
+    def applicant_status
     end
   end
 
   class TargetScore < Score
     def target_key
       if underdeveloped?
-        ["target_low", "underdeveloped"]
+        "target_low"
       elsif overdeveloped?
-        ["target_high", "overdeveloped"]
+        "target_high"
       else
-        ["target_general", ""]
+        "target_general"
       end
     end
   end
