@@ -12,50 +12,113 @@ class InsightLookup
     :target_low_applicant_overdeveloped_text       => 'target low applicant overdeveloped text',
   }
 
+  attr_accessor :applicant, :target
+
   def initialize(applicant_score, target_score)
-    @applicant_score = applicant_score
-    @target_score = target_score
+    self.applicant = Applicant.new(applicant_score)
+    self.target    = Target.new(target_score)
   end
 
   def analyze
-    @target_score.nil? ? text_without_target : text_with_target
+    INSIGHTS[key.to_sym] if !key.nil? and INSIGHTS.has_key?(key.to_sym)
   end
 
   private
 
+  def key
+    has_target? ? text_with_target : text_without_target
+  end
+
+  def has_target?
+    target.has_score?
+  end
+
+  class Applicant
+    attr_accessor :score
+
+    def initialize(score)
+      @score = score
+    end
+
+    def underdeveloped?
+      @score < 40
+    end
+
+    def overdeveloped?
+      @score > 60
+    end
+
+    def over?(score)
+      self.score > score
+    end
+
+    def under?(score)
+      self.score < score
+    end
+  end
+
+  class Target
+    attr_accessor :score
+
+    def initialize(score)
+      @score = score
+    end
+
+    def low?
+      @score < 40
+    end
+
+    def high?
+      @score > 60
+    end
+
+    def general?
+      @score < 60 and @score > 40
+    end
+
+    def has_score?
+      !score.nil?
+    end
+  end
+
   def text_without_target
-    @applicant_score > 60 ? INSIGHTS[:applicant_overdeveloped_text] : INSIGHTS[:applicant_underdeveloped_text]
+    applicant.overdeveloped? ? :applicant_overdeveloped_text : :applicant_underdeveloped_text
   end
 
   def text_with_target
-    if @applicant_score < 40 # underdeveloped
-      if @target_score < 40
-        if @applicant_score < @target_score
-          return INSIGHTS[:target_low_applicant_more_underdeveloped_text]
-        elsif @applicant_score > @target_score
-          return INSIGHTS[:target_low_applicant_less_underdeveloped_text]
-        else
-          return INSIGHTS[:target_low_applicant_less_underdeveloped_text]
-        end
-      elsif @target_score > 60
-        return INSIGHTS[:target_high_applicant_underdeveloped_text]
+    return text_with_target_when_underdeveloped if applicant.underdeveloped?
+    return text_with_target_when_overdeveloped if applicant.overdeveloped?
+  end
+
+  def text_with_target_when_underdeveloped
+    if target.low?
+      if applicant.under?(target.score)
+        return :target_low_applicant_more_underdeveloped_text
+      elsif applicant.over?(target.score)
+        return :target_low_applicant_less_underdeveloped_text
       else
-        return INSIGHTS[:target_general_applicant_underdeveloped_text]
+        return :target_low_applicant_less_underdeveloped_text
       end
-    elsif @applicant_score > 60 #overdeveloped
-      if @target_score < 40
-        return INSIGHTS[:target_low_applicant_overdeveloped_text]
-      elsif @target_score > 60
-        if @applicant_score > @target_score
-          return INSIGHTS[:target_high_applicant_more_overdeveloped_text]
-        elsif @applicant_score < @target_score
-          return INSIGHTS[:target_high_applicant_less_overdeveloped_text]
-        else
-          return INSIGHTS[:target_high_applicant_less_overdeveloped_text]
-        end
+    elsif target.high?
+      return :target_high_applicant_underdeveloped_text
+    else
+      return :target_general_applicant_underdeveloped_text
+    end
+  end
+
+  def text_with_target_when_overdeveloped
+    if target.low?
+      return :target_low_applicant_overdeveloped_text
+    elsif target.high?
+      if applicant.over?(target.score)
+        return :target_high_applicant_more_overdeveloped_text
+      elsif applicant.under?(target.score)
+        return :target_high_applicant_less_overdeveloped_text
       else
-        return INSIGHTS[:target_general_applicant_overdeveloped_text]
+        return :target_high_applicant_less_overdeveloped_text
       end
+    else
+      return :target_general_applicant_overdeveloped_text
     end
   end
 end
