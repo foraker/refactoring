@@ -1,15 +1,49 @@
 class InsightLookup
   INSIGHTS = {
-    :applicant_overdeveloped                  => 'applicant overdeveloped text',
-    :applicant_underdeveloped                 => 'applicant underdeveloped text',
-    :target_general_applicant_overdeveloped   => 'target general applicant overdeveloped text',
-    :target_general_applicant_underdeveloped  => 'target general applicant underdeveloped text',
-    :target_high_applicant_more_overdeveloped => 'target high applicant more overdeveloped text',
-    :target_high_applicant_less_overdeveloped => 'target high applicant less overdeveloped text',
-    :target_high_applicant_underdeveloped     => 'target high applicant underdeveloped text',
-    :target_low_applicant_more_underdeveloped => 'target low applicant more underdeveloped text',
-    :target_low_applicant_less_underdeveloped => 'target low applicant less underdeveloped text',
-    :target_low_applicant_overdeveloped       => 'target low applicant overdeveloped text',
+    no_target: {
+      overdeveloped_applicant: {
+        bullseye: 'applicant overdeveloped text',
+      },
+      underdeveloped_applicant: {
+        bullseye: 'applicant underdeveloped text',
+      },
+      general_applicant: {
+        bullseye: 'applicant underdeveloped text',
+      },
+    },
+
+    general_target: {
+      overdeveloped_applicant: {
+        bullseye: 'target general applicant overdeveloped text',
+      },
+      underdeveloped_applicant: {
+        bullseye: 'target general applicant underdeveloped text',
+      },
+    },
+
+    high_target: {
+      overdeveloped_applicant: {
+        overshot: 'target high applicant more overdeveloped text',
+        bullseye: 'target high applicant less overdeveloped text',
+        undershot: 'target high applicant less overdeveloped text',
+      },
+      underdeveloped_applicant: {
+        undershot: 'target high applicant underdeveloped text',
+        bullseye: 'target high applicant underdeveloped text',
+      },
+    },
+
+    low_target: {
+      overdeveloped_applicant: {
+        undershot: 'target low applicant overdeveloped text',
+        bullseye: 'target low applicant overdeveloped text',
+      },
+      underdeveloped_applicant: {
+        undershot: 'target low applicant less underdeveloped text',
+        bullseye: 'target low applicant less underdeveloped text',
+        overshot: 'target low applicant more underdeveloped text',
+      },
+    },
   }
 
   attr_accessor :applicant, :target
@@ -20,17 +54,39 @@ class InsightLookup
   end
 
   def analyze
-    INSIGHTS[key.to_sym] if !key.nil? and INSIGHTS.has_key?(key.to_sym)
+    begin
+      INSIGHTS[target_key][applicant_key][overshoot_key]
+    rescue NoMethodError
+      nil
+    end
   end
 
   private
 
-  def key
-    has_target? ? text_with_target : text_without_target
+  def target_key
+    "#{target.state}_target".to_sym
   end
 
-  def has_target?
-    target.has_score?
+  def applicant_key
+    "#{applicant.state}_applicant".to_sym
+  end
+
+  def overshoot_key
+    if !target.has_score?
+      return :bullseye
+    end
+
+    if target.high?
+      return :overshot if applicant.over?(target.score)
+      return :undershot if applicant.under?(target.score)
+    end
+
+    if target.low?
+      return :overshot if applicant.under?(target.score)
+      return :undershot if applicant.over?(target.score)
+    end
+
+    return :bullseye
   end
 
   class Applicant
@@ -40,12 +96,22 @@ class InsightLookup
       @score = score
     end
 
+    def state
+      return 'general' if general?
+      return 'overdeveloped' if overdeveloped?
+      return 'underdeveloped'
+    end
+
     def underdeveloped?
       @score < 40
     end
 
     def overdeveloped?
       @score > 60
+    end
+
+    def general?
+      @score < 60 and @score > 40
     end
 
     def over?(score)
@@ -64,6 +130,13 @@ class InsightLookup
       @score = score
     end
 
+    def state
+      return :no if !has_score?
+      return :general if general?
+      return :low if low?
+      return :high if high?
+    end
+
     def low?
       @score < 40
     end
@@ -78,47 +151,6 @@ class InsightLookup
 
     def has_score?
       !score.nil?
-    end
-  end
-
-  def text_without_target
-    applicant.overdeveloped? ? :applicant_overdeveloped : :applicant_underdeveloped
-  end
-
-  def text_with_target
-    return text_with_target_when_underdeveloped if applicant.underdeveloped?
-    return text_with_target_when_overdeveloped if applicant.overdeveloped?
-  end
-
-  def text_with_target_when_underdeveloped
-    if target.low?
-      if applicant.under?(target.score)
-        return :target_low_applicant_more_underdeveloped
-      elsif applicant.over?(target.score)
-        return :target_low_applicant_less_underdeveloped
-      else
-        return :target_low_applicant_less_underdeveloped
-      end
-    elsif target.high?
-      return :target_high_applicant_underdeveloped
-    else
-      return :target_general_applicant_underdeveloped
-    end
-  end
-
-  def text_with_target_when_overdeveloped
-    if target.low?
-      return :target_low_applicant_overdeveloped
-    elsif target.high?
-      if applicant.over?(target.score)
-        return :target_high_applicant_more_overdeveloped
-      elsif applicant.under?(target.score)
-        return :target_high_applicant_less_overdeveloped
-      else
-        return :target_high_applicant_less_overdeveloped
-      end
-    else
-      return :target_general_applicant_overdeveloped
     end
   end
 end
