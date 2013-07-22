@@ -1,4 +1,4 @@
-require File.expand_path("../request_pricing_service", __FILE__)
+require 'spec_helper'
 
 describe RequestPricingService do
   let(:request) do
@@ -101,7 +101,9 @@ describe RequestPricingService do
   end
 
   describe "a state without specific pricing statutes" do
-    before { request.stub(state: "CO") }
+    before do 
+      request.stub(state: "CO") 
+    end
 
     it { should charge(185.00).for(0).pages }
     it { should charge(185.00).for(1).pages }
@@ -121,7 +123,6 @@ RSpec::Matchers.define :charge do |expected|
   chain :for do |page_count|
     @page_count = page_count
   end
-
   chain :pages do
     # Only for DSL readability
   end
