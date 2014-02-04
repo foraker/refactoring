@@ -101,8 +101,8 @@ describe RequestPricingService do
   end
 
   describe "a state without specific pricing statutes" do
+    #before { request.stub(state: "CO") }
     before { request.stub(state: "CO") }
-
     it { should charge(185.00).for(0).pages }
     it { should charge(185.00).for(1).pages }
     it { should charge(185.00).for(10).pages }
